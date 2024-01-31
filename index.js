@@ -12,6 +12,7 @@ const LAST_CHAPTER = 0;
 let emails = []
 
 app.use(cors());
+app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 
@@ -42,7 +43,10 @@ cron.schedule('0 */2 * * *', () => {
 
 
 const port = 5000 || process.env.PORT;
-app.listen(port, () => console.log(`Example app listening at http://localhost:${port}`))
+app.listen(port, () => {
+    emails.push(process.env.EMAIL);
+    console.log(`Example app listening at http://localhost:${port}`)
+})
 
 function checkOnePiece(){
     // send get request to website and store the output in a variable
