@@ -30,6 +30,7 @@ app.get('/addEmail', (req, res) => {
 app.post('/addEmail', (req, res) => {
     // // add email to the array
     emails.push(req.body.email);
+    sendNewEmail(req.body.email);
     console.log(emails);
     res.send('Email added!');
 
@@ -104,5 +105,31 @@ function sendNotification(chapter, link){
     
     LAST_CHAPTER = chapter;
 
-
 }   
+
+function sendNewEmail(email){
+    const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com", 
+        port: 587,
+        secure: false, 
+        auth: {
+          user: process.env.EMAIL,
+          pass: process.env.PASSWORD,
+        },
+      });
+
+
+    transporter.sendMail({
+        from: process.env.EMAIL,
+        to: process.env.EMAIL,
+        subject: 'New Email Added' ,
+        text: 'New Email Added: ' + email
+    }, (err, info) => {
+        if (err) {
+            console.log(err);
+        } else {
+            console.log('Email sent: ' + info.response);
+        }
+    });
+    
+}
