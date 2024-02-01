@@ -4,13 +4,14 @@ const cors = require('cors');
 require('dotenv').config();
 const cron = require('node-cron');
 const axios = require('axios');
-const nodemailer = require('nodemailer');
+const {Resend}  = require('resend');
 const bodyParser = require('body-parser');
 
 let LAST_CHAPTER = 0;
 
 let emails = []
 
+const resend = new Resend(process.env.RESEND_TOKEN);
 app.use(cors());
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -45,7 +46,7 @@ cron.schedule('0 */2 * * *', () => {
 
 const port = 5000 || process.env.PORT;
 app.listen(port, () => {
-    emails.push(process.env.EMAIL);
+    // emails.push(process.env.EMAIL);
     console.log(`Example app listening at http://localhost:${port}`)
 })
 
@@ -75,70 +76,30 @@ function checkOnePiece(){
     });
 }
 
-const createTransporter = () => {
-    return nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 587,
-        secure: false,
-        auth: {
-            user: process.env.EMAIL,
-            pass: process.env.PASSWORD,
-        },
-    });
-};
-
-const sendMail = (transporter, mailOptions) => {
-    return new Promise((resolve, reject) => {
-        transporter.sendMail(mailOptions, (err, info) => {
-            if (err) {
-                console.log(err);
-                reject(err);
-            } else {
-                console.log('Email sent: ' + info.response);
-                resolve(info);
-            }
-        });
-    });
-};
 
 const sendNotification = async (chapter, link) => {
     console.log('chapter: ' + chapter + ' link: ' + link);
 
-    const transporter = createTransporter();
-
     for (let i = 0; i < emails.length; i++) {
-        const mailOptions = {
+        resend.emails.send({
             from: process.env.EMAIL,
             to: emails[i],
             subject: 'One Piece Chapter ' + chapter + ' is out!',
-            text: 'Link: ' + link
-        };
-
-        try {
-            await sendMail(transporter, mailOptions);
-        } catch (error) {
-            // Handle error if needed
-            console.error('Error sending email:', error);
-        }
+            html: '<p>Link: <strong>'+ link +'</strong>!</p>'
+          });
     }
 
     LAST_CHAPTER = chapter;
 };
 
 const sendNewEmail = async (email) => {
-    const transporter = createTransporter();
-
-    const mailOptions = {
+    console.log('email: ' + email);
+    
+    resend.emails.send({
         from: process.env.EMAIL,
-        to: process.env.EMAIL,
+        to: process.env.GMAIL,
         subject: 'New Email Added',
-        text: 'New Email Added: ' + email
-    };
+        html: '<p>New Email Added: <strong>'+ email +'</strong>!</p>'
+      });
 
-    try {
-        await sendMail(transporter, mailOptions);
-    } catch (error) {
-        // Handle error if needed
-        console.error('Error sending email:', error);
-    }
 };
