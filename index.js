@@ -17,7 +17,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 
 app.get('/', (req, res) => {
-    checkOnePiece();
+    // checkOnePiece();
     res.send('<h1>Server Online!<h1><br><a href="/addEmail">Add Email</a>')
 })
 
