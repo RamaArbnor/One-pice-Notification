@@ -7,7 +7,7 @@ const axios = require('axios');
 const nodemailer = require('nodemailer');
 const bodyParser = require('body-parser');
 
-const LAST_CHAPTER = 0;
+let LAST_CHAPTER = 0;
 
 let emails = []
 
@@ -17,7 +17,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 
 app.get('/', (req, res) => {
-    // checkOnePiece();
+    checkOnePiece();
     res.send('<h1>Server Online!<h1><br><a href="/addEmail">Add Email</a>')
 })
 
@@ -75,61 +75,70 @@ function checkOnePiece(){
     });
 }
 
-function sendNotification(chapter, link){
-    console.log('chapter: ' + chapter + ' link: ' + link);
-    // send email notification
-    const transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com", 
+const createTransporter = () => {
+    return nodemailer.createTransport({
+        host: "smtp.gmail.com",
         port: 587,
-        secure: false, 
+        secure: false,
         auth: {
-          user: process.env.EMAIL,
-          pass: process.env.PASSWORD,
+            user: process.env.EMAIL,
+            pass: process.env.PASSWORD,
         },
-      });
+    });
+};
+
+const sendMail = (transporter, mailOptions) => {
+    return new Promise((resolve, reject) => {
+        transporter.sendMail(mailOptions, (err, info) => {
+            if (err) {
+                console.log(err);
+                reject(err);
+            } else {
+                console.log('Email sent: ' + info.response);
+                resolve(info);
+            }
+        });
+    });
+};
+
+const sendNotification = async (chapter, link) => {
+    console.log('chapter: ' + chapter + ' link: ' + link);
+
+    const transporter = createTransporter();
 
     for (let i = 0; i < emails.length; i++) {
-    transporter.sendMail({
-        from: process.env.EMAIL,
-        to: emails[i],
-        subject: 'One Piece Chapter ' + chapter + ' is out!',
-        text: 'Link: ' + link
-    }, (err, info) => {
-        if (err) {
-            console.log(err);
-        } else {
-            console.log('Email sent: ' + info.response);
+        const mailOptions = {
+            from: process.env.EMAIL,
+            to: emails[i],
+            subject: 'One Piece Chapter ' + chapter + ' is out!',
+            text: 'Link: ' + link
+        };
+
+        try {
+            await sendMail(transporter, mailOptions);
+        } catch (error) {
+            // Handle error if needed
+            console.error('Error sending email:', error);
         }
-    });
     }
-    
+
     LAST_CHAPTER = chapter;
+};
 
-}   
+const sendNewEmail = async (email) => {
+    const transporter = createTransporter();
 
-function sendNewEmail(email){
-    const transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com", 
-        port: 587,
-        secure: false, 
-        auth: {
-          user: process.env.EMAIL,
-          pass: process.env.PASSWORD,
-        },
-      });
-
-
-    transporter.sendMail({
+    const mailOptions = {
         from: process.env.EMAIL,
         to: process.env.EMAIL,
-        subject: 'New Email Added' ,
+        subject: 'New Email Added',
         text: 'New Email Added: ' + email
-    }, (err, info) => {
-        if (err) {
-            console.log(err);
-        } else {
-            console.log('Email sent: ' + info.response);
-        }
-    });
-    
-}
+    };
+
+    try {
+        await sendMail(transporter, mailOptions);
+    } catch (error) {
+        // Handle error if needed
+        console.error('Error sending email:', error);
+    }
+};
