@@ -19,7 +19,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 app.get('/', (req, res) => {
     // checkOnePiece();
-    res.send('<h1>Server Online!<h1><br><a href="/addEmail">Add Email</a>')
+    res.send('<h1>Server Online!<h1><br><a href="/addEmail">Add Email</a><br><a href="/checkOnePiece">Check One Piece</a>')
 })
 
 app.get('/addEmail', (req, res) => {
@@ -27,6 +27,11 @@ app.get('/addEmail', (req, res) => {
     res.send('<form action="/addEmail" method="POST"><input type="text" name="email"><input type="submit" value="Submit"></form>');
 }
 )
+
+app.get('/checkOnePiece', (req, res) => {
+    checkOnePiece();
+    res.send('Checking One Piece...' + LAST_CHAPTER);
+})
 
 app.post('/addEmail', (req, res) => {
     // // add email to the array
@@ -39,6 +44,7 @@ app.post('/addEmail', (req, res) => {
 
 //CRON JOB
 cron.schedule('0 */2 * * *', () => {
+    console.log('checking one piece')
     checkOnePiece();
 });
 
@@ -68,6 +74,7 @@ function checkOnePiece(){
         console.log('LAST CHAPTER: ' + LAST_CHAPTER + ' CURRENT CHAPTER: ' + chapter);
         // if the chapter number is not the same as the last chapter number, send a notification
         if (chapter !== LAST_CHAPTER) {
+            console.log('New Chapter is out! /n Sending notification...');
             sendNotification(chapter, 'https://tcbscans.com' + link[0]);
         }
         
@@ -81,6 +88,7 @@ const sendNotification = async (chapter, link) => {
     console.log('chapter: ' + chapter + ' link: ' + link);
 
     for (let i = 0; i < emails.length; i++) {
+        console.log('sending email to: ' + emails[i]);
         resend.emails.send({
             from: process.env.EMAIL,
             to: emails[i],
